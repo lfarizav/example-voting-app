@@ -1,0 +1,41 @@
+pipeline{
+	agent{
+		docker{
+			image 'maven:3.6.1-jdk-8-slim'
+			args '-v $HOME/.m2:/root/.m2'
+		}
+	}
+	stages{
+		stage('build'){
+			steps{
+				echo 'building worker app'
+				dir('worker'){
+					sh 'mvn compile'
+				}
+			}
+		}
+		state('test'){
+			steps{
+				echo 'running unit test on worker app'
+				dir('worker'){
+					sh 'mvn clear test'
+				}
+			}
+		}
+		stage('package') {
+			steps{
+				echo 'packaging worker app into a jarfile
+				dir('worker'){
+					sh 'mvn package -DskipTest'
+					archiveARtifacts artifacts: '**/target/*.jar', fingerprint: true
+				}
+			}
+		}
+	}
+	post{
+		always{
+			echo 'the job is complete'
+		}
+	}
+
+}
